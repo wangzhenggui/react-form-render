@@ -28,10 +28,7 @@ const InputSchema = {
   default: '34435454',
   component: 'ApaasInput', // 前端需要使用字段，和我们目前组件库形成一一对应
   props: {
-    // disabled: {
-    //   type: 'VARIABLE',
-    //   variable: 'state.order.c',
-    // },
+    disabled: '{{state.input123456789}}',
   },
   rules: [
     {
@@ -62,7 +59,7 @@ const TextAreaSchema = {
   default: '34435454',
   component: 'ApaasTextArea', // 前端需要使用字段，和我们目前组件库形成一一对应
   props: {
-    // 前端组件属性配置，服务端不需要解析
+    disabled: '{{state.input123456789}}',
   },
   rules: [
     {
@@ -208,10 +205,7 @@ const ProvinceSchema = {
   component: 'ApaasProvince', // 前端需要使用字段，和我们目前组件库形成一一对应
   props: {
     // 前端组件属性配置，服务端不需要解析
-    options: {
-      type: 'VARIABLE',
-      variable: 'state.address',
-    },
+    options: '{{store.address}}',
   },
   relationEvents: [
     {
@@ -553,10 +547,7 @@ const formFields = [
     component: 'ExpressLogistics', // 前端需要使用字段，和我们目前组件库形成一一对应
     props: {
       // 前端组件属性配置，服务端不需要解析
-      options: {
-        type: 'VARIABLE',
-        variable: 'state.express',
-      },
+      options: '{{store.express}}',
       showField: 'all',
     },
     rules: [
@@ -615,7 +606,7 @@ const events = `
   export const initAddress = async function () {
     const { data } = await this.request.post('/enterprise/gdfw/third/address');
     const finalLevels = transResult(data?.address)
-    this.state.address = finalLevels;
+    this.store.address = finalLevels;
   }
 
   export const initExpress = async function () {
@@ -626,8 +617,8 @@ const events = `
       value: item?.deliveryCode
     }))
     console.log('finalExpress', finalExpress);
-    this.state.express = finalExpress;
-    // this.refs[id].current.state.options = finalExpress;
+    this.store.express = finalExpress;
+    // this.refs[id].current.store.options = finalExpress;
   }
 `;
 const [formFieldsState, setFormFields] = useState([]);

@@ -2,8 +2,8 @@
  * @Author: wangzhenggui jianjia.wzg@raycloud.com
  * @Date: 2022-07-12 11:07:32
  * @LastEditors: wangzhenggui jianjia.wzg@raycloud.com
- * @LastEditTime: 2022-08-12 13:50:07
- * @FilePath: /form-render-components/src/FormRender/instance.ts
+ * @LastEditTime: 2022-11-01 17:18:01
+ * @FilePath: /react-form-render/src/FormRender/instance.ts
  * @Description:
  *
  * Copyright (c) 2022 by wangzhenggui jianjia.wzg@raycloud.com, All Rights Reserved.
@@ -27,12 +27,13 @@ class Instance {
   refs: {
     [props: string]: React.Ref<any>;
   };
-  state: any;
+  dataSource: any;
   submitQueue: any[];
   setStore: React.Dispatch<React.SetStateAction<any>>;
+  store: any;
+  state: any;
   constructor() {
     this.request = request;
-    this.state = {};
     this.refs = {};
     this.schema = [];
     this.utils = {
@@ -64,6 +65,10 @@ class Instance {
     this.params = {}; // 函数执行时，默认参数放在此处保存
     this.setStore = () => {};
     this.submitQueue = [];
+    this.dataSource = makeAutoObservable({
+      state: {},
+      store: {},
+    });
   }
 
   /**
@@ -72,11 +77,14 @@ class Instance {
    */
   initMethods(code: string) {
     if (code) {
+      const _self = this;
+      _self.state = this.dataSource.state;
+      _self.store = this.dataSource.store;
       const methods = transFormJsCode({})(code);
       const bindScopeMethods: any = {};
       Object.keys(methods).map((methodName) => {
         if (typeof methods[methodName] === 'function') {
-          bindScopeMethods[methodName] = methods[methodName].bind(this);
+          bindScopeMethods[methodName] = methods[methodName].bind(_self);
         }
       });
       this.methods = bindScopeMethods;
@@ -135,11 +143,6 @@ class Instance {
   // 设置参数
   setParams(params: any) {
     this.params = params;
-  }
-
-  // 设置Store
-  setReactStore(state: any) {
-    makeAutoObservable(state);
   }
 }
 

@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useMemo,
   useRef,
   forwardRef,
   useImperativeHandle,
@@ -10,10 +11,10 @@ import { get, groupBy, isEmpty } from 'lodash';
 import instance from './instance';
 import { validate } from './validate';
 import { Rule } from './type';
-import FieldInput from '../Field';
 import useInit from '../hooks/useInit';
 import useMount from '../hooks/useMount';
-import { parseApis, parseExpression } from './parserApi';
+import { parseApis } from './parserApi';
+import { loopObject } from '../common/util';
 import { Env, StateInterface, RuleType } from './type';
 import './index.less';
 
@@ -89,13 +90,29 @@ const checkRequiredByRules = (rules: Rule[]) => {
   return true;
 };
 
+// 收集表单项依赖 找到state.xxx 和 store.xxx这些依赖项
+const collectDependance = (item: any) => {
+  const stringifyItem = JSON.stringify(item);
+  const dependanceStateExpress = stringifyItem.match(/state[.\w]+/g);
+  dependanceStateExpress?.map((dep) =>
+    console.debug(item.id, get(instance.state, dep.replace('state.', ''))),
+  );
+  const dependanceStoreExpress = stringifyItem.match(/store[.\w]+/g);
+  dependanceStoreExpress?.map((dep) =>
+    console.debug(item.id, get(instance.store, dep.replace('store.', ''))),
+  );
+};
 const Element = observer(
   ({ item, onChange, value, subRules, widgets }: ElementProps) => {
-    const Field = get(widgets, item.component);
-    const events = initEvent(item?.relationEvents || [], item.id);
+    // 这里想要更新，必须手动收集依赖才可以
+    collectDependance(item);
+    const newItem = loopObject(instance.state)(item);
+    const Field = get(widgets, newItem.component);
+    const events = initEvent(newItem?.relationEvents || [], newItem.id);
     useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
     const handleChange = (val: any) => {
-      onChange && onChange(val); // Antd Form的双向绑定
+      // onChange && onChange(val); // Antd Form的双向绑定
+      instance.state[item.id] = val;
       if (events?.onChange) {
         // 组件自定义onChange事件
         events.onChange(val);
@@ -103,33 +120,18 @@ const Element = observer(
     };
     const rules = groupBy(subRules, 'field');
     const ref = useRef();
-    instance.addRef(item.id, ref);
-    const transProps = parseExpression(item.props, instance.state);
-    console.debug('transProps', transProps);
+    instance.addRef(newItem.id, ref);
     if (Field) {
       return (
         // @ts-ignore
         <Field
           {...events}
-          {...transProps}
+          {...newItem.props}
           onChange={handleChange}
-          value={value}
+          value={instance.state[item.id]}
           rules={rules}
           ref={ref}
           id={item.id}
-        />
-      );
-    }
-    // FIXME: 这个组件临时测试使用
-    if (item.component === 'Field') {
-      return (
-        <FieldInput
-          {...events}
-          {...transProps}
-          onChange={handleChange}
-          value={value}
-          rules={rules}
-          ref={ref}
         />
       );
     }
@@ -172,9 +174,7 @@ const FormRender = (
 ) => {
   const [form] = Form.useForm();
   useMount(() => {
-    instance.setReactStore(
-      Object.assign(instance.state, get(parseApis(dataSource), 'state', {})),
-    );
+    instance.store = get(parseApis(dataSource), 'state', {});
   });
   useImperativeHandle(ref, () => ({
     form: form,
