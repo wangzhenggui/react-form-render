@@ -27,9 +27,7 @@ const InputSchema = {
   widgetType: 'basics',
   default: '34435454',
   component: 'ApaasInput', // 前端需要使用字段，和我们目前组件库形成一一对应
-  props: {
-    disabled: '{{state.input123456789}}',
-  },
+  props: {},
   rules: [
     {
       type: 'required',
@@ -606,6 +604,7 @@ const events = `
   export const initAddress = async function () {
     const { data } = await this.request.post('/enterprise/gdfw/third/address');
     const finalLevels = transResult(data?.address)
+    console.log('this', this)
     this.store.address = finalLevels;
   }
 
@@ -633,7 +632,6 @@ export default () => (
   <FormRender
     formFields={formFieldsState}
     events={eventsState}
-    env={{ client: 'WEB' }}
     dataSource={[
       {
         name: 'order',

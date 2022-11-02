@@ -2,13 +2,12 @@
  * @Author: wangzhenggui jianjia.wzg@raycloud.com
  * @Date: 2022-07-13 19:28:58
  * @LastEditors: wangzhenggui jianjia.wzg@raycloud.com
- * @LastEditTime: 2022-08-16 16:37:20
- * @FilePath: /form-render-components/src/FormRender/type.ts
+ * @LastEditTime: 2022-11-02 22:11:12
+ * @FilePath: /react-form-render/src/FormRender/type.ts
  * @Description:
  *
  * Copyright (c) 2022 by wangzhenggui jianjia.wzg@raycloud.com, All Rights Reserved.
  */
-declare const DateType: ['WEB', 'SINGLE', 'WANGWANG'];
 export enum RuleType {
   REQUIRED = 'required',
   ONLY = 'only',
@@ -32,9 +31,6 @@ type Event = {
   eventType: EventType;
   eventId: string;
   params?: any;
-};
-export type Env = {
-  client: typeof DateType[number];
 };
 
 export enum WidgetTypeEnum {

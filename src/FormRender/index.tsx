@@ -1,11 +1,10 @@
 import React, {
   useEffect,
-  useMemo,
   useRef,
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { Form, FormProps } from 'antd';
+import { Form } from 'antd';
 import { observer } from 'mobx-react-lite';
 import { get, groupBy, isEmpty } from 'lodash';
 import instance from './instance';
@@ -15,7 +14,7 @@ import useInit from '../hooks/useInit';
 import useMount from '../hooks/useMount';
 import { parseApis } from './parserApi';
 import { loopObject } from '../common/util';
-import { Env, StateInterface, RuleType } from './type';
+import { StateInterface, RuleType } from './type';
 import './index.less';
 
 export type EventType = {
@@ -41,10 +40,8 @@ export type WidgetType = {
 export type FormRenderProps = {
   formFields: FieldProps[];
   events: string;
-  env: Env;
   dataSource: StateInterface[];
   widgets: WidgetType;
-  formProps?: FormProps;
 };
 
 export type ElementProps = {
@@ -102,42 +99,39 @@ const collectDependance = (item: any) => {
     console.debug(item.id, get(instance.store, dep.replace('store.', ''))),
   );
 };
-const Element = observer(
-  ({ item, onChange, value, subRules, widgets }: ElementProps) => {
-    // 这里想要更新，必须手动收集依赖才可以
-    collectDependance(item);
-    const newItem = loopObject(instance.state)(item);
-    const Field = get(widgets, newItem.component);
-    const events = initEvent(newItem?.relationEvents || [], newItem.id);
-    useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
-    const handleChange = (val: any) => {
-      // onChange && onChange(val); // Antd Form的双向绑定
-      instance.state[item.id] = val;
-      if (events?.onChange) {
-        // 组件自定义onChange事件
-        events.onChange(val);
-      }
-    };
-    const rules = groupBy(subRules, 'field');
-    const ref = useRef();
-    instance.addRef(newItem.id, ref);
-    if (Field) {
-      return (
-        // @ts-ignore
-        <Field
-          {...events}
-          {...newItem.props}
-          onChange={handleChange}
-          value={instance.state[item.id]}
-          rules={rules}
-          ref={ref}
-          id={item.id}
-        />
-      );
+const Element = observer(({ item, subRules, widgets }: ElementProps) => {
+  // 这里想要更新，必须手动收集依赖才可以
+  collectDependance(item);
+  const newItem = loopObject(instance)(item);
+  const Field = get(widgets, newItem.component);
+  const events = initEvent(newItem?.relationEvents || [], newItem.id);
+  useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
+  const handleChange = (val: any) => {
+    instance.state[item.id] = val;
+    if (events?.onChange) {
+      // 组件自定义onChange事件
+      events.onChange(val);
     }
-    return null;
-  },
-);
+  };
+  const rules = groupBy(subRules, 'field');
+  const ref = useRef();
+  instance.addRef(newItem.id, ref);
+  if (Field) {
+    return (
+      // @ts-ignore
+      <Field
+        {...events}
+        {...newItem.props}
+        onChange={handleChange}
+        value={get(instance, `state.${item.id}`)}
+        rules={rules}
+        ref={ref}
+        id={item.id}
+      />
+    );
+  }
+  return null;
+});
 
 const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
   const { rules = [], title } = item;
@@ -162,14 +156,7 @@ const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
 };
 
 const FormRender = (
-  {
-    formFields,
-    events,
-    env,
-    dataSource = [],
-    widgets,
-    formProps,
-  }: FormRenderProps,
+  { formFields, events, dataSource = [], widgets }: FormRenderProps,
   ref: React.Ref<any>,
 ) => {
   const [form] = Form.useForm();
@@ -180,9 +167,6 @@ const FormRender = (
     form: form,
     submitQueue: instance.submitQueue,
   }));
-  useEffect(() => {
-    instance.setEnv(env);
-  }, [env]);
   useEffect(() => {
     instance.setForm(form);
   }, [form]);
@@ -201,7 +185,7 @@ const FormRender = (
     instance.initMethods(events);
   }, [events]);
   return (
-    <Form form={form} {...formProps}>
+    <Form form={form}>
       {formFields.map((item, index) => getFieldItem(item, widgets, index))}
     </Form>
   );

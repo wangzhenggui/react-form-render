@@ -2,7 +2,7 @@
  * @Author: wangzhenggui jianjia.wzg@raycloud.com
  * @Date: 2022-07-12 11:07:32
  * @LastEditors: wangzhenggui jianjia.wzg@raycloud.com
- * @LastEditTime: 2022-11-01 17:18:01
+ * @LastEditTime: 2022-11-02 22:11:52
  * @FilePath: /react-form-render/src/FormRender/instance.ts
  * @Description:
  *
@@ -14,7 +14,7 @@ import lodash from 'lodash';
 import { FormInstance } from 'antd';
 import { transFormJsCode } from '@raycloud-apaas-fe-setup/apaas-parser';
 import { makeAutoObservable } from 'mobx';
-import { Env, WidgetTypeEnum, Field, EventType } from './type';
+import { WidgetTypeEnum, Field, EventType } from './type';
 
 class Instance {
   request: typeof request;
@@ -22,7 +22,6 @@ class Instance {
   form: any;
   params: any;
   utils: any;
-  public env: any;
   schema: Field[];
   refs: {
     [props: string]: React.Ref<any>;
@@ -131,13 +130,6 @@ class Instance {
    */
   setForm(form: FormInstance<any>) {
     this.form = form;
-  }
-
-  /**
-   * 设置环境信息
-   */
-  setEnv(env: Env) {
-    this.env = env;
   }
 
   // 设置参数
