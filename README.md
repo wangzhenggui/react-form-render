@@ -11,6 +11,10 @@
   default: '34435454', // 组件默认值
   component: 'ApaasInput', // 组件名称,最终渲染组件
   props: {}, // 组件属性
+  required: '{{state.input_1}}', // 必填校验 支持表达式
+  disabled: '{{state.input_1}}', // 禁用设置 支持表达式
+  hidden: '{{state.input_1}}', // 隐藏域设置-页面不展示，但是提交时会携带
+  visible: '{{state.input_1}}', // 可访问性-页面不展示，并且这个字段不会出现在表单域中
   rules: [ // 校验规则
     {
       type: 'required',

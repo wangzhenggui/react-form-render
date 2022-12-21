@@ -27,6 +27,8 @@ export type FieldProps = {
   id: string;
   title: string;
   component: string;
+  disabled?: boolean;
+  required?: boolean;
   props?: any;
   default?: any;
   relationEvents?: EventType[];
@@ -46,6 +48,7 @@ export type FormRenderProps = {
 
 export type ElementProps = {
   item: FieldProps;
+  newItem: FieldProps;
   onChange: (p: any) => void;
   value?: any;
   subRules: Rule[];
@@ -99,64 +102,108 @@ const collectDependance = (item: any) => {
     console.debug(item.id, get(instance.store, dep.replace('store.', ''))),
   );
 };
-const Element = observer(
-  ({ item, subRules, widgets, onChange }: ElementProps) => {
-    collectDependance(item); // 这里想要更新，必须手动收集依赖才可以
-    const newItem = loopObject(instance)(item);
-    const Field = get(widgets, newItem.component);
-    const events = initEvent(newItem?.relationEvents || [], newItem.id);
-    useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
-    const handleChange = (val: any) => {
-      instance.state[item.id] = val?.target ? val?.target?.value : val;
-      onChange(val); // TODO: 这里需要和Antd做双向通信，将值给到Antd Form中，为的是使用antd校验功能
-      if (events?.onChange) {
-        // 组件自定义onChange事件
-        events.onChange(val);
-      }
-    };
-    const rules = groupBy(subRules, 'field');
-    const ref = useRef();
-    instance.addRef(newItem.id, ref);
-    if (Field) {
-      return (
-        // @ts-ignore
-        <Field
-          {...events}
-          {...newItem.props}
-          onChange={handleChange}
-          value={get(instance, `state.${item.id}`)} // TODO: 通过mobx对表单值进行一次包装，为了可以实现依赖更新加载
-          rules={rules}
-          ref={ref}
-          id={item.id}
-        />
-      );
+const Element = ({
+  item,
+  newItem,
+  subRules,
+  widgets,
+  onChange,
+}: ElementProps) => {
+  const Field = get(widgets, newItem.component);
+  const events = initEvent(newItem?.relationEvents || [], newItem.id);
+  useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
+  const handleChange = (val: any) => {
+    instance.state[item.id] = val?.target ? val?.target?.value : val;
+    onChange(val); // TODO: 这里需要和Antd做双向通信，将值给到Antd Form中，为的是使用antd校验功能
+    if (events?.onChange) {
+      // 组件自定义onChange事件
+      events.onChange(val);
     }
-    return null;
+  };
+  console.log('newItem.disabled', newItem);
+  const rules = groupBy(subRules, 'field');
+  const ref = useRef();
+  instance.addRef(newItem.id, ref);
+  if (Field) {
+    return (
+      // @ts-ignore
+      <Field
+        {...events}
+        {...newItem.props}
+        disabled={newItem.disabled}
+        onChange={handleChange}
+        value={get(instance, `state.${item.id}`)} // TODO: 通过mobx对表单值进行一次包装，为了可以实现依赖更新加载
+        rules={rules}
+        ref={ref}
+        id={item.id}
+      />
+    );
+  }
+  return null;
+};
+
+const FormItemHoc = observer(
+  ({
+    item,
+    widgets,
+    index,
+  }: {
+    item: FieldProps;
+    widgets: WidgetType;
+    index: number;
+  }) => {
+    const { rules = [], title } = item;
+    const { currentRules, subRules } = checkRuleProcessing(rules, title);
+    // const fieldRequired = checkRequiredByRules(rules);
+    collectDependance(item); // TODO: 这里想要更新，必须手动收集依赖才可以
+    const newItem = loopObject(instance)(item);
+    if (newItem?.visible) {
+      delete instance.state?.[item?.id];
+      return null;
+    }
+    return (
+      <Form.Item
+        name={item.id}
+        label={item.title}
+        rules={currentRules as any}
+        required={newItem?.required}
+        hidden={newItem?.required}
+        data-index={index}
+      >
+        <Element
+          item={item}
+          newItem={newItem}
+          /** @ts-ignore */
+          subRules={subRules}
+          widgets={widgets}
+        />
+      </Form.Item>
+    );
   },
 );
 
-const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
-  const { rules = [], title } = item;
-  const { currentRules, subRules } = checkRuleProcessing(rules, title);
-  const fieldRequired = checkRequiredByRules(rules);
-  return (
-    <Form.Item
-      name={item.id}
-      label={item.title}
-      rules={currentRules as any}
-      required={fieldRequired}
-      data-index={index}
-      key={item.id}
-    >
-      <Element
-        item={item}
-        /** @ts-ignore */
-        subRules={subRules}
-        widgets={widgets}
-      />
-    </Form.Item>
-  );
-};
+// const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
+//   const { rules = [], title } = item;
+//   const { currentRules, subRules } = checkRuleProcessing(rules, title);
+//   const fieldRequired = checkRequiredByRules(rules);
+//   return (
+//     <Form.Item
+//       name={item.id}
+//       label={item.title}
+//       rules={currentRules as any}
+//       required={fieldRequired}
+//       data-index={index}
+//       key={item.id}
+//     >
+//       <Element
+//         item={item}
+//         /** @ts-ignore */
+//         subRules={subRules}
+//         widgets={widgets}
+//       />
+//     </Form.Item>
+//   );
+// };
 
 const FormRender = (
   { formFields, events, dataSource = [], widgets }: FormRenderProps,
@@ -180,6 +227,7 @@ const FormRender = (
   useEffect(() => {
     instance.setSchema(formFields);
     const initFormValue = formFields.reduce((cur: any, nxt) => {
+      instance.state[nxt.id] = void 0;
       if (nxt?.default) {
         cur[nxt.id] = nxt.default;
         instance.state[nxt.id] = nxt.default;
@@ -193,7 +241,15 @@ const FormRender = (
   }, [events]);
   return (
     <Form form={form}>
-      {formFields.map((item, index) => getFieldItem(item, widgets, index))}
+      {/* {formFields.map((item, index) => getFieldItem(item, widgets, index))} */}
+      {formFields.map((item, index) => (
+        <FormItemHoc
+          item={item}
+          widgets={widgets}
+          index={index}
+          key={item?.id}
+        />
+      ))}
     </Form>
   );
 };

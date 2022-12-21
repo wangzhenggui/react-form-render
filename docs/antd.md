@@ -10,16 +10,7 @@ const InputSchema = {
   default: '输入框默认值',
   component: 'Input', // 前端需要使用字段，和我们目前组件库形成一一对应
   props: {},
-  rules: [
-    {
-      type: 'required',
-      validate: {
-        type: 'valueType',
-        value: true,
-      },
-      message: '必填',
-    },
-  ],
+  rules: [],
   relationEvents: [
     {
       eventType: 'onBlur',
@@ -34,9 +25,11 @@ const Input2Schema = {
   type: 'string',
   default: '输入框默认值2',
   component: 'Input', // 前端需要使用字段，和我们目前组件库形成一一对应
-  props: {
-    disabled: '{{state.input_1}}',
-  },
+  props: {},
+  required: '{{state.input_1}}',
+  disabled: '{{state.input_1}}',
+  hidden: '{{state.input_1}}',
+  // visible: '{{state.input_1}}',
   rules: [
     {
       type: 'required',
