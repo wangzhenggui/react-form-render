@@ -26,9 +26,8 @@ class Instance {
   refs: {
     [props: string]: React.Ref<any>;
   };
-  dataSource: any;
+  private dataSource: any;
   submitQueue: any[];
-  setStore: React.Dispatch<React.SetStateAction<any>>;
   store: any;
   state: any;
   constructor() {
@@ -62,12 +61,13 @@ class Instance {
       lodash,
     };
     this.params = {}; // 函数执行时，默认参数放在此处保存
-    this.setStore = () => {};
     this.submitQueue = [];
     this.dataSource = makeAutoObservable({
       state: {},
       store: {},
     });
+    this.state = this.dataSource.state;
+    this.store = this.dataSource.store;
   }
 
   /**
@@ -77,8 +77,6 @@ class Instance {
   initMethods(code: string) {
     if (code) {
       const _self = this;
-      _self.state = this.dataSource.state;
-      _self.store = this.dataSource.store;
       const methods = transFormJsCode({})(code);
       const bindScopeMethods: any = {};
       Object.keys(methods).map((methodName) => {

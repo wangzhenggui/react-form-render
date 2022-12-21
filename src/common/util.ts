@@ -44,7 +44,6 @@ export const loopObject = (dataSource: any) => (origin: any) => {
     if (isString(origin) && matchExpression(origin)) {
       // 表达式替换
       const newContent = replaceExpression(origin);
-      console.log('newContent', newContent);
       const func = new Function('scope', 'return ' + newContent);
       try {
         return func(dataSource);

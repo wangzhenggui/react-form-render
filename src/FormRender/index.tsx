@@ -46,7 +46,7 @@ export type FormRenderProps = {
 
 export type ElementProps = {
   item: FieldProps;
-  onChange?: (p: any) => void;
+  onChange: (p: any) => void;
   value?: any;
   subRules: Rule[];
   widgets: WidgetType;
@@ -99,39 +99,41 @@ const collectDependance = (item: any) => {
     console.debug(item.id, get(instance.store, dep.replace('store.', ''))),
   );
 };
-const Element = observer(({ item, subRules, widgets }: ElementProps) => {
-  // 这里想要更新，必须手动收集依赖才可以
-  collectDependance(item);
-  const newItem = loopObject(instance)(item);
-  const Field = get(widgets, newItem.component);
-  const events = initEvent(newItem?.relationEvents || [], newItem.id);
-  useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
-  const handleChange = (val: any) => {
-    instance.state[item.id] = val;
-    if (events?.onChange) {
-      // 组件自定义onChange事件
-      events.onChange(val);
+const Element = observer(
+  ({ item, subRules, widgets, onChange }: ElementProps) => {
+    collectDependance(item); // 这里想要更新，必须手动收集依赖才可以
+    const newItem = loopObject(instance)(item);
+    const Field = get(widgets, newItem.component);
+    const events = initEvent(newItem?.relationEvents || [], newItem.id);
+    useInit(events?.onInit); // onInit 事件,在组件加载的时候触发一次
+    const handleChange = (val: any) => {
+      instance.state[item.id] = val?.target ? val?.target?.value : val;
+      onChange(val); // TODO: 这里需要和Antd做双向通信，将值给到Antd Form中，为的是使用antd校验功能
+      if (events?.onChange) {
+        // 组件自定义onChange事件
+        events.onChange(val);
+      }
+    };
+    const rules = groupBy(subRules, 'field');
+    const ref = useRef();
+    instance.addRef(newItem.id, ref);
+    if (Field) {
+      return (
+        // @ts-ignore
+        <Field
+          {...events}
+          {...newItem.props}
+          onChange={handleChange}
+          value={get(instance, `state.${item.id}`)} // TODO: 通过mobx对表单值进行一次包装，为了可以实现依赖更新加载
+          rules={rules}
+          ref={ref}
+          id={item.id}
+        />
+      );
     }
-  };
-  const rules = groupBy(subRules, 'field');
-  const ref = useRef();
-  instance.addRef(newItem.id, ref);
-  if (Field) {
-    return (
-      // @ts-ignore
-      <Field
-        {...events}
-        {...newItem.props}
-        onChange={handleChange}
-        value={get(instance, `state.${item.id}`)}
-        rules={rules}
-        ref={ref}
-        id={item.id}
-      />
-    );
-  }
-  return null;
-});
+    return null;
+  },
+);
 
 const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
   const { rules = [], title } = item;
@@ -144,6 +146,7 @@ const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
       rules={currentRules as any}
       required={fieldRequired}
       data-index={index}
+      key={item.id}
     >
       <Element
         item={item}
@@ -161,7 +164,10 @@ const FormRender = (
 ) => {
   const [form] = Form.useForm();
   useMount(() => {
-    instance.store = get(parseApis(dataSource), 'state', {});
+    const store = get(parseApis(dataSource), 'state', {});
+    Object.entries(store).map(([key, value]) => {
+      instance.store[key] = value;
+    });
   });
   useImperativeHandle(ref, () => ({
     form: form,
@@ -176,6 +182,7 @@ const FormRender = (
     const initFormValue = formFields.reduce((cur: any, nxt) => {
       if (nxt?.default) {
         cur[nxt.id] = nxt.default;
+        instance.state[nxt.id] = nxt.default;
       }
       return cur;
     }, {});

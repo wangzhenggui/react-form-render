@@ -30,4 +30,26 @@ export default defineConfig({
       .end()
       .type('javascript/auto');
   },
+  proxy: {
+    '/qy/': {
+      target: 'http://kefu.kuaimai.com/', //测试服务
+      changeOrigin: true,
+      cookieDomainRewrite: 'kefu.kuaimai.com',
+    },
+    '/shop/': {
+      target: 'http://kefu.kuaimai.com/', //测试服务
+      changeOrigin: true,
+      cookieDomainRewrite: 'kefu.kuaimai.com',
+    },
+    '/tianwen/': {
+      target: 'http://kefu.kuaimai.com/', //测试服务
+      changeOrigin: true,
+      cookieDomainRewrite: 'kefu.kuaimai.com',
+    },
+    '/enterprise/': {
+      target: 'http://kefu.kuaimai.com/', //测试服务
+      changeOrigin: true,
+      cookieDomainRewrite: 'kefu.kuaimai.com',
+    },
+  },
 });
