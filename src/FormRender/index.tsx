@@ -15,7 +15,6 @@ import useMount from '../hooks/useMount';
 import { parseApis } from './parserApi';
 import { loopObject } from '../common/util';
 import { StateInterface, RuleType } from './type';
-import './index.less';
 
 export type EventType = {
   eventType: 'onClick' | 'onChange' | 'onBlur' | 'onFocus';
@@ -82,14 +81,6 @@ const checkRuleProcessing = (rules: Rule[], title: string) => {
   };
 };
 
-// 通过rules自动分析当前组件是否需要必填
-const checkRequiredByRules = (rules: Rule[]) => {
-  if (isEmpty(rules.find((rule) => rule.type === RuleType.REQUIRED))) {
-    return false;
-  }
-  return true;
-};
-
 // 收集表单项依赖 找到state.xxx 和 store.xxx这些依赖项
 const collectDependance = (item: any) => {
   const stringifyItem = JSON.stringify(item);
@@ -120,7 +111,6 @@ const Element = ({
       events.onChange(val);
     }
   };
-  console.log('newItem.disabled', newItem);
   const rules = groupBy(subRules, 'field');
   const ref = useRef();
   instance.addRef(newItem.id, ref);
@@ -154,7 +144,6 @@ const FormItemHoc = observer(
   }) => {
     const { rules = [], title } = item;
     const { currentRules, subRules } = checkRuleProcessing(rules, title);
-    // const fieldRequired = checkRequiredByRules(rules);
     collectDependance(item); // TODO: 这里想要更新，必须手动收集依赖才可以
     const newItem = loopObject(instance)(item);
     if (newItem?.visible) {
@@ -181,29 +170,6 @@ const FormItemHoc = observer(
     );
   },
 );
-
-// const getFieldItem = (item: FieldProps, widgets: WidgetType, index: number) => {
-//   const { rules = [], title } = item;
-//   const { currentRules, subRules } = checkRuleProcessing(rules, title);
-//   const fieldRequired = checkRequiredByRules(rules);
-//   return (
-//     <Form.Item
-//       name={item.id}
-//       label={item.title}
-//       rules={currentRules as any}
-//       required={fieldRequired}
-//       data-index={index}
-//       key={item.id}
-//     >
-//       <Element
-//         item={item}
-//         /** @ts-ignore */
-//         subRules={subRules}
-//         widgets={widgets}
-//       />
-//     </Form.Item>
-//   );
-// };
 
 const FormRender = (
   { formFields, events, dataSource = [], widgets }: FormRenderProps,

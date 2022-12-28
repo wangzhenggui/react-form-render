@@ -13,7 +13,7 @@ const InputSchema = {
   rules: [],
   relationEvents: [
     {
-      eventType: 'onBlur',
+      eventType: 'onInit',
       eventId: 'initDeliveryCompanyInfoList',
     },
   ],

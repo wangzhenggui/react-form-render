@@ -16,14 +16,6 @@
   hidden: '{{state.input_1}}', // 隐藏域设置-页面不展示，但是提交时会携带
   visible: '{{state.input_1}}', // 可访问性-页面不展示，并且这个字段不会出现在表单域中
   rules: [ // 校验规则
-    {
-      type: 'required',
-      validate: {
-        type: 'valueType',
-        value: true,
-      },
-      message: '必填',
-    },
   ],
   relationEvents: [ // 事件绑定关系
     {
